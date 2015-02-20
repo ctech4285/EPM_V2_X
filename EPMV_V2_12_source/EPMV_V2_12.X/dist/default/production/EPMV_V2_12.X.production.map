@@ -1,0 +1,90 @@
+MPLINK 5.03, LINKER
+Linker Map File - Created Tue Feb 10 12:51:24 2015
+
+                                 Section Info
+                  Section       Type    Address   Location Size(Bytes)
+                ---------  ---------  ---------  ---------  ---------
+                   .org_0       code   0x000000    program   0x0002c0
+                   .cinit    romdata   0x000160    program   0x000004
+.config_2007_BUILD/DEFAULT/PRODUCTION/_EXT/14       code   0x002007    program   0x000002
+
+
+
+                              Program Memory Usage 
+                               Start         End      
+                           ---------   ---------      
+                            0x000000    0x000161      
+                            0x002007    0x002007      
+            355 out of 2310 program addresses used, program memory utilization is 15%
+
+
+
+                              Symbols - Sorted by Name
+                     Name    Address   Location    Storage File                     
+                ---------  ---------  ---------  --------- ---------                
+                Blink_LED   0x000145    program     static ..\EPM_V2_1_2.asm        
+                   Button   0x00006e    program     static ..\EPM_V2_1_2.asm        
+                 Delay1ms   0x000157    program     static ..\EPM_V2_1_2.asm        
+                DelayLoop   0x000153    program     static ..\EPM_V2_1_2.asm        
+               DelayLoop1   0x000159    program     static ..\EPM_V2_1_2.asm        
+               DelayLoop2   0x00015b    program     static ..\EPM_V2_1_2.asm        
+               DelayLoop3   0x00015d    program     static ..\EPM_V2_1_2.asm        
+                  DelayMs   0x000152    program     static ..\EPM_V2_1_2.asm        
+             Falling_Edge   0x00007f    program     static ..\EPM_V2_1_2.asm        
+           Interrupt_Call   0x000057    program     static ..\EPM_V2_1_2.asm        
+              Invalid_PWM   0x0000b6    program     static ..\EPM_V2_1_2.asm        
+                Main_Loop   0x000055    program     static ..\EPM_V2_1_2.asm        
+                Off_Pulse   0x00009f    program     static ..\EPM_V2_1_2.asm        
+                 On_Pulse   0x00009a    program     static ..\EPM_V2_1_2.asm        
+                      PWM   0x000077    program     static ..\EPM_V2_1_2.asm        
+              PWM_warning   0x000141    program     static ..\EPM_V2_1_2.asm        
+    Reset_PWM_Counter_Off   0x0000a9    program     static ..\EPM_V2_1_2.asm        
+     Reset_PWM_Counter_On   0x0000a4    program     static ..\EPM_V2_1_2.asm        
+    Return_From_Interrupt   0x000138    program     static ..\EPM_V2_1_2.asm        
+              Rising_Edge   0x00007c    program     static ..\EPM_V2_1_2.asm        
+                    Setup   0x000005    program     static ..\EPM_V2_1_2.asm        
+                    Start   0x000000    program     static ..\EPM_V2_1_2.asm        
+                    Timer   0x000068    program     static ..\EPM_V2_1_2.asm        
+                 Turn_Off   0x00010d    program     static ..\EPM_V2_1_2.asm        
+                  Turn_On   0x0000b9    program     static ..\EPM_V2_1_2.asm        
+                     blah   0x00006b    program     static ..\EPM_V2_1_2.asm        
+                    debug   0x0000b1    program     static ..\EPM_V2_1_2.asm        
+                    normo   0x000083    program     static ..\EPM_V2_1_2.asm        
+                     test   0x0000ae    program     static ..\EPM_V2_1_2.asm        
+
+
+
+                              Symbols - Sorted by Address
+                     Name    Address   Location    Storage File                     
+                ---------  ---------  ---------  --------- ---------                
+                    Start   0x000000    program     static ..\EPM_V2_1_2.asm        
+                    Setup   0x000005    program     static ..\EPM_V2_1_2.asm        
+                Main_Loop   0x000055    program     static ..\EPM_V2_1_2.asm        
+           Interrupt_Call   0x000057    program     static ..\EPM_V2_1_2.asm        
+                    Timer   0x000068    program     static ..\EPM_V2_1_2.asm        
+                     blah   0x00006b    program     static ..\EPM_V2_1_2.asm        
+                   Button   0x00006e    program     static ..\EPM_V2_1_2.asm        
+                      PWM   0x000077    program     static ..\EPM_V2_1_2.asm        
+              Rising_Edge   0x00007c    program     static ..\EPM_V2_1_2.asm        
+             Falling_Edge   0x00007f    program     static ..\EPM_V2_1_2.asm        
+                    normo   0x000083    program     static ..\EPM_V2_1_2.asm        
+                 On_Pulse   0x00009a    program     static ..\EPM_V2_1_2.asm        
+                Off_Pulse   0x00009f    program     static ..\EPM_V2_1_2.asm        
+     Reset_PWM_Counter_On   0x0000a4    program     static ..\EPM_V2_1_2.asm        
+    Reset_PWM_Counter_Off   0x0000a9    program     static ..\EPM_V2_1_2.asm        
+                     test   0x0000ae    program     static ..\EPM_V2_1_2.asm        
+                    debug   0x0000b1    program     static ..\EPM_V2_1_2.asm        
+              Invalid_PWM   0x0000b6    program     static ..\EPM_V2_1_2.asm        
+                  Turn_On   0x0000b9    program     static ..\EPM_V2_1_2.asm        
+                 Turn_Off   0x00010d    program     static ..\EPM_V2_1_2.asm        
+    Return_From_Interrupt   0x000138    program     static ..\EPM_V2_1_2.asm        
+              PWM_warning   0x000141    program     static ..\EPM_V2_1_2.asm        
+                Blink_LED   0x000145    program     static ..\EPM_V2_1_2.asm        
+                  DelayMs   0x000152    program     static ..\EPM_V2_1_2.asm        
+                DelayLoop   0x000153    program     static ..\EPM_V2_1_2.asm        
+                 Delay1ms   0x000157    program     static ..\EPM_V2_1_2.asm        
+               DelayLoop1   0x000159    program     static ..\EPM_V2_1_2.asm        
+               DelayLoop2   0x00015b    program     static ..\EPM_V2_1_2.asm        
+               DelayLoop3   0x00015d    program     static ..\EPM_V2_1_2.asm        
+
+

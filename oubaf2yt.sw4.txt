@@ -1,0 +1,38 @@
+﻿
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored, and an empty message aborts the commit.
+# On branch master
+# Changes to be committed:
+#	new file:   Datasheet_EPM688-V2.0.pdf
+#	new file:   EPM688
+#
+# Changes not staged for commit:
+#	deleted:    EPM 688 V2.pdf
+#	modified:   EPMV_V2_12_source/EPM_V2_1.2.mcs
+#	modified:   EPMV_V2_12_source/EPM_V2_1.2.mcw
+#	deleted:    EPMV_V2_12_source/EPM_V2_1_2.COD
+#	modified:   EPMV_V2_12_source/EPM_V2_1_2.HEX
+#	modified:   EPMV_V2_12_source/EPM_V2_1_2.asm
+#	modified:   EPMV_V2_12_source/EPM_V2_1_2.err
+#	modified:   EPMV_V2_12_source/EPM_V2_1_2.lst
+#	modified:   parts_drawings/production parts/1548_A.SLDPRT
+#	modified:   parts_drawings/production parts/~$1559_B.SLDDRW
+#	modified:   parts_drawings/~$1559_B.SLDPRT
+#
+# Untracked files:
+#	EPMV_V2_12_source/EPMV_V2_12.X/
+#	EPMV_V2_12_source_inverser/
+#	EPM_688_V2.pdf
+#	PCB Mask R10/
+#	PCB Mask RC6/
+#	PCB Masks RC5/
+#	PCB Masks RC8/
+#	PCB Masks RC9/
+#	R2.50 winding jig/
+#	V2.50_Documentation/
+#	order_drawing/1548_C.pdf
+#	parts_drawings/NCR18650A_Cell.SLDPRT
+#	parts_drawings/production parts/1548_C.SLDDRW
+#	parts_drawings/production parts/1548_C.SLDPRT
+#
+

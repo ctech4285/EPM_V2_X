@@ -1,0 +1,1120 @@
+MPASM 5.57                    EPM_V2_1_2.ASM   2-10-2015  12:51:22         PAGE  1
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+Warning[205]: Found directive in column 1. (include)
+                      00001 include <p12F683.inc>
+                      00001         LIST
+                      00002 
+                      00003 ;==========================================================================
+                      00004 ; Build date : May 28 2014
+                      00005 ;  MPASM PIC12F683 processor include
+                      00006 ; 
+                      00007 ;  (c) Copyright 1999-2014 Microchip Technology, All rights reserved
+                      00008 ;==========================================================================
+                      00009 
+                      00460         LIST
+2007   33DC           00002      __config (_INTRC_OSC_NOCLKOUT & _WDT_ON & _PWRTE_OFF & _MCLRE_OFF & _CP_OFF & _IESO_OFF & _FCMEN_OF
+                            F)
+                      00003 
+                      00004 
+                      00005 
+                      00006 ;runs on PIC12F683
+                      00007 ;Andreas Jochum
+                      00008 
+                      00009 
+                      00010 ;GPIOs
+                      00011 ;GPIO,0 Output, Data, high=on, low=off, output to pin 4 on JP2, ICSP
+                      00012 ;GPIO,1 Output, Charge enable, ICSP pin 5 on JP2
+                      00013 ;GPIO,2 Input Button, Output, LED
+                      00014 ;GPIO,3 Input, PWM 
+                      00015 ;GPIO,4 Output, Thyristor out for on
+                      00016 ;GPIO,5 Output, Thyristor out for off
+                      00017 
+                      00018 
+                      00019 
+                      00020 ;Interrupt_Call
+                      00021 ;Button                         ->go to Button
+                      00022 ;Timer_overflow         ->go to NO_PWM
+                      00023 ;PWM                            ->go to PWM
+                      00024         
+                      00025 
+                      00026 
+                      00027 
+                      00028 
+                      00029 
+                      00030 
+                      00031 
+                      00032          
+                      00033         cblock 0x20                             ; Variables starting at this address
+  00000020            00034         Delay:2                                 ; Define two registers for the Delay and Delay + 1
+  00000022            00035         Off_Pulse_Lengh                 
+  00000023            00036         On_Pulse_Lengh
+  00000024            00037         Center_Pulse_Lengh
+  00000025            00038         GPIO_Last
+  00000026            00039         GPIO_Current                    ;needed to find out if we had a a trigger on rising or falling e
+                            dge
+  00000027            00040         Status1                                 ;100 =undefined 10=on 1=off
+MPASM 5.57                    EPM_V2_1_2.ASM   2-10-2015  12:51:22         PAGE  2
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+  00000028            00041         PWM_Lengh       
+  00000029            00042         PWM_timout_counter_rollover
+                      00043 
+                      00044 
+  0000002A            00045         PWM_Counter
+  0000002B            00046         PWM_Last
+  0000002C            00047         PWM_current
+                      00048         
+                      00049          endc
+                      00050 
+                      00051      org 0                ; Start at flash address 0
+0000                  00052 Start:
+0000   2???           00053         goto Setup
+0001   0000           00054         nop
+0002   0000           00055         nop
+0003   0000           00056         nop
+0004   2???           00057         goto Interrupt_Call
+                      00058 
+                      00059         
+0005                  00060 Setup:
+                      00061 
+0005   1683           00062         Banksel OSCCON
+0006   3070           00063     movlw       0x70                    
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0007   008F           00064         movwf   OSCCON                  ; Set the internal clock speed to 8 Mhz 
+0008   3007           00065         movlw   0x07
+0009   1283           00066         Banksel CMCON0
+                      00067 
+000A   0099           00068     movwf       CMCON0                  ; Turn off Comparator (GP0, GP1, GP2)
+000B   1683           00069         Banksel ANSEL
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+000C   019F           00070         clrf    ANSEL                   ; Make all ports as digital I/O
+                      00071 
+                      00072 
+                      00073 
+000D   1283           00074         Banksel WDTCON
+000E   1498           00075         BsF WDTCON,WDTPS0               ;Watchdog Timer Period Select bits
+000F   1118           00076         BcF WDTCON,WDTPS1               ;1010= 1:32768
+0010   1198           00077         BcF WDTCON,WDTPS2               ;1024ms
+0011   1618           00078         BsF WDTCON,WDTPS3
+0012   1418           00079         BSF WDTCON,SWDTEN
+0013   1498           00080         BSF WDTCON,WDTPS0               ;Software Enable or Disable the Watchdog Timer (turn off for now
+                            )                                                                                               
+                      00081         
+0014   1683           00082         Banksel OPTION_REG
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0015   1781           00083         BSF     OPTION_REG,7            ;GPIO Pull-up Enable bit
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0016   1701           00084         BSF     OPTION_REG,INTEDG       ;Interrupt Edge Select bit
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0017   1281           00085         BCF OPTION_REG,T0CS             ;Timer0 Clock Source Select bit
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0018   1201           00086         BCF OPTION_REG,T0SE             ;Timer0 Source Edge Select bit (irelevant)
+MPASM 5.57                    EPM_V2_1_2.ASM   2-10-2015  12:51:22         PAGE  3
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0019   1181           00087         BCF OPTION_REG,PSA              ;Prescaler Assignment bit  (Assinged to Timer0)
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+001A   1401           00088         BSF     OPTION_REG,PS0          ;Prescaler Rate Select bits
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+001B   1481           00089         BSF OPTION_REG,PS1              ;111 = 1:256, 32ms 
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+001C   1501           00090         BSF     OPTION_REG,PS2          ;
+                      00091 
+001D   1683           00092         Banksel WPU
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+001E   1115           00093         BCF     WPU,2                   ;disable weak pull up on gpio 2 (button)
+                      00094         
+                      00095 
+001F   1683           00096         Banksel TRISIO  
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0020   1005           00097         BCF             TRISIO,0                ;GPIO,0 output
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0021   1085           00098         BCF             TRISIO,1                ;GPIO,1 output
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0022   1505           00099         BSF             TRISIO,2                ;GPIO,2 input
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0023   1585           00100         BSF             TRISIO,3                ;GPIO,3 input
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0024   1205           00101         BCF             TRISIO,4                ;GPIO,4 output
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0025   1285           00102         BCF             TRISIO,5                ;GPIO,5 output
+                      00103 
+                      00104 
+                      00105 
+                      00106 
+0026   1283           00107         Banksel INTCON
+0027   178B           00108         BSF             INTCON,GIE              ;Global Interrupt Enable bit
+0028   130B           00109         BCF             INTCON,PEIE             ;Peripheral Interrupt Enable bit
+0029   168B           00110         BSF             INTCON,T0IE             ;Timer0 Overflow Interrupt Enable bit
+002A   160B           00111         BSF             INTCON,INTE             ;GP2/INT External Interrupt Enable bit
+002B   158B           00112         BSF             INTCON,GPIE             ;GPIO Change Interrupt Enable bit
+                      00113 
+002C   1683           00114         Banksel IOC                             ;interupt on change
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+002D   1016           00115         BCF             IOC,0                   
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+002E   1096           00116         BCF             IOC,1
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+002F   1116           00117         BCF             IOC,2                   ;input button, don't need to enable on change
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0030   1596           00118         BSF             IOC,3                   ;input PWM
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0031   1216           00119         BCF             IOC,4
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0032   1296           00120         BCF             IOC,5
+                      00121         
+                      00122         ;Turn watchdog on
+MPASM 5.57                    EPM_V2_1_2.ASM   2-10-2015  12:51:22         PAGE  4
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0033   0064           00123         CLRWDT                                  ;clear the WDT just in case
+0034   1283           00124         Banksel WDTCON
+0035   1498           00125         BSF WDTCON,WDTPS0               ;Software Enable or Disable the Watchdog Timer (on)
+0036   0064           00126         CLRWDT                                  ;clear the WDT just in case
+                      00127 
+                      00128         ;Turn thyristors charger off
+0037   1283           00129         Banksel GPIO
+0038   1085           00130         BCF             GPIO,1                  ;charge disable GPIO,0
+                      00131         
+0039   1205           00132         BCF     GPIO,4                  ;thyristor output low
+003A   1285           00133         BCF     GPIO,5                  ;thyristor output low
+                      00134 
+                      00135         ;Define PWM Pulse width
+003B   1283           00136         Banksel Off_Pulse_Lengh
+003C   300A           00137         movlw   .010            ;0x0A=08, or 1.25ms
+003D   00A2           00138         movwf   Off_Pulse_Lengh
+                      00139         
+003E   1283           00140         Banksel On_Pulse_Lengh
+003F   300E           00141         movlw   .014                    ;0x0E=12, or 1.75ms
+0040   00A3           00142         movwf   On_Pulse_Lengh
+                      00143 
+0041   1283           00144         Banksel Center_Pulse_Lengh
+0042   300A           00145         movlw   .010                            ;0x0C=10, or 1.5ms
+0043   00A4           00146         movwf   Center_Pulse_Lengh
+                      00147 
+                      00148         ;Define how many times a PWM is missed before blinking LED once
+0044   301E           00149         movlw   .030
+0045   00A9           00150         movwf   PWM_timout_counter_rollover
+                      00151 
+                      00152 
+                      00153         ;Counters usded to see how many consecutive on or off pulses we had
+                      00154         
+0046   3002           00155         movlw   .002            
+0047   00AA           00156         movwf   PWM_Counter     
+                      00157 
+                      00158 
+0048   3000           00159         movlw   0x0
+0049   00AB           00160         movwf   PWM_Last
+                      00161 
+004A   3000           00162         movlw   0x0
+004B   00AC           00163         movwf   PWM_current             
+                      00164 
+                      00165         ;Set current status 
+004C   1283           00166         Banksel Status1
+004D   3004           00167         movlw   B'00000100'     ;init status variable, 100 =undefined 010=on 001=off
+004E   00A7           00168         movwf   Status1
+                      00169         
+                      00170         ;wait before turning charger on, make sure the thyristors are off
+004F   3014           00171         movlw   .020                                    ;Wait 1 ms delay,
+0050   2???           00172         call    DelayMs 
+                      00173         ;turn charger on
+0051   1283           00174         Banksel GPIO
+0052   1485           00175         BSF             GPIO,1                  ;charge enable is on GPIO,1
+MPASM 5.57                    EPM_V2_1_2.ASM   2-10-2015  12:51:22         PAGE  5
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0053   1005           00176         BCF     GPIO,0                  ;data low
+                      00177 
+                      00178 
+                      00179         ;if we get a reset togle data pin twice
+                      00180 
+                      00181 ;       BSF     GPIO,0
+                      00182 ;       BCF GPIO,0
+                      00183 ;       BSF     GPIO,0
+                      00184 ;       BCF GPIO,0
+                      00185 
+                      00186         
+0054   2???           00187         goto Main_Loop
+                      00188         
+0055                  00189 Main_Loop:
+                      00190 ;we should be here at least once per second so reset the WDT
+Warning[203]: Found opcode in column 1. (CLRWDT)
+0055   0064           00191 CLRWDT
+                      00192 
+Warning[203]: Found opcode in column 1. (goto)
+0056   2???           00193 goto Main_Loop
+                      00194         
+                      00195         
+0057                  00196 Interrupt_Call:
+                      00197         
+0057   1283           00198                 Banksel INTCON
+                      00199         ;       BCF INTCON,GIE                                  ;disable all interups
+                      00200                 ;save the GPIO, needed to detect rision or falling edge
+0058   1283           00201                 Banksel GPIO
+0059   0826           00202                 movf GPIO_Current,0
+005A   1283           00203                 Banksel GPIO_Last
+005B   00A5           00204                 movwf GPIO_Last                                 ;save current value as last
+005C   1283           00205                 Banksel GPIO
+005D   0805           00206                 movf GPIO,0                                             ;copy GPIO into GPIO_current
+005E   1283           00207                 Banksel GPIO_Current
+005F   00A6           00208                 movwf GPIO_Current
+                      00209                 
+                      00210                 ;check where the interrupt came from
+0060   1283           00211                 Banksel INTCON
+                      00212 
+0061   190B           00213                 BTFSC   INTCON,T0IF
+0062   2???           00214                 goto    Timer                                           ;if TOIF bit is set interrupt ca
+                            me from the timer
+                      00215                                                                                         ;Timer rolled ov
+                            er, call no pwm alert time: 32ms
+                      00216                 
+0063   188B           00217                 BTFSC INTCON,INTF       
+0064   2???           00218                 goto    Button                                          ;interrupt came from GPIO2
+                      00219                 
+                      00220         
+                      00221         
+0065   180B           00222                 BTFSC   INTCON,GPIF                             ;if the interrupt came from other GPIO 
+0066   2???           00223                 goto    PWM                                             ;asume its GPIO3 PWM
+                      00224                 
+MPASM 5.57                    EPM_V2_1_2.ASM   2-10-2015  12:51:22         PAGE  6
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00225         
+                      00226                 ;if we ended up here something whent wrong clear the interrupt
+0067   2???           00227                 goto Return_From_Interrupt
+                      00228 
+0068                  00229 Timer
+                      00230         
+0068   0BA9           00231                 DECFSZ PWM_timout_counter_rollover,1
+0069   2???           00232                         goto blah
+006A   2???           00233                 call PWM_warning                                        ;Blink LED
+006B                  00234 blah
+006B   1283           00235                 Banksel TMR0
+006C   0181           00236                 Clrf    TMR0                                    ;reset the time0
+006D   2???           00237                 goto Return_From_Interrupt
+                      00238         
+006E                  00239 Button
+006E   1283           00240                 Banksel INTCON
+006F   100B           00241                 BCF INTCON,GPIF
+                      00242         
+                      00243 
+0070   1283           00244                 BANKSEL INTCON
+0071   120B           00245                 BCF INTCON,INTE                                         ;cleare gp2 external intrrupt fl
+                            ag
+0072   1283           00246                 Banksel Status1
+                      00247                 
+                      00248                                                                                         ;Status is not o
+                            ff              
+0073   18A7           00249                 BTFSC   Status1,1               
+0074   2???           00250                 goto Turn_Off                                           ;Status is on, so Turn_Off
+                      00251                 
+                      00252                 
+                      00253                 ;Status is not off turn on                              
+0075   2???           00254                 goto Turn_On                                            
+                      00255         
+0076   2???           00256                 goto Return_From_Interrupt
+0077                  00257 PWM     
+                      00258 
+0077   1DA6           00259                 BTFSS   GPIO_Current,GP3        ;
+0078   2???           00260                 goto Falling_Edge                       ;we got the falling edge
+0079   19A6           00261                 BTFSC   GPIO_Current,GP3
+007A   2???           00262                 goto Rising_Edge                        ;we got a rising edge
+007B   1283           00263                 Banksel GPIO
+                      00264 
+007C                  00265 Rising_Edge:
+007C   1283           00266                 Banksel TMR0
+007D   0181           00267                 Clrf    TMR0                                    ;reset the time0
+                      00268         
+007E   2???           00269                 goto Return_From_Interrupt
+                      00270                 
+                      00271 
+                      00272 
+007F                  00273 Falling_Edge:
+007F   1283           00274                 Banksel TMR0
+0080   0801           00275                 movf TMR0,0             ;move timer counter into w
+MPASM 5.57                    EPM_V2_1_2.ASM   2-10-2015  12:51:22         PAGE  7
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00276 
+0081   1283           00277                 Banksel PWM_Lengh
+0082   00A8           00278                 movwf PWM_Lengh         ;
+                      00279                 
+                      00280 
+                      00281 
+0083                  00282 normo: 
+                      00283                 ;test if PWM is greater then 0.75 and smaller then 2.25ms, 
+0083   3005           00284                 movlw .005                      ; 0.75 ms               
+0084   0228           00285                 SUBWF PWM_Lengh,0
+0085   1283           00286                 Banksel STATUS
+0086   1C03           00287                 BTFSS STATUS,C          ;
+0087   2???           00288                 goto Invalid_PWM
+                      00289                 
+0088   3011           00290                 movlw .017                      ; 2.25 ms,      
+0089   0228           00291                 SUBWF PWM_Lengh,0
+008A   1283           00292                 Banksel STATUS
+008B   1803           00293                 BTFSC STATUS,C          ;
+008C   2???           00294                 goto Invalid_PWM
+                      00295 
+                      00296                 
+008D   0822           00297                 movf Off_Pulse_Lengh,0                  ; 1.25 ms               
+008E   0228           00298                 SUBWF PWM_Lengh,0
+008F   1283           00299                 Banksel STATUS
+0090   1C03           00300                 BTFSS STATUS,C          ;
+0091   2???           00301                 goto Off_Pulse
+                      00302                 
+0092   0823           00303                 movf On_Pulse_Lengh,0                   ; 1.75ms        
+0093   0228           00304                 SUBWF PWM_Lengh,0
+0094   1283           00305                 Banksel STATUS
+0095   1803           00306                 BTFSC STATUS,C          ;
+0096   2???           00307                 goto On_Pulse
+                      00308                 
+0097   3002           00309                 movlw   .002            
+0098   00AA           00310                 movwf   PWM_Counter
+0099   2???           00311                 goto Return_From_Interrupt
+                      00312 
+                      00313 
+009A                  00314 On_Pulse
+                      00315 
+009A   1C2B           00316                 BTFSS PWM_Last,0
+009B   2???           00317                         goto Reset_PWM_Counter_On                                       ;last was not on
+                      00318                 
+                      00319                 
+Message[305]: Using default destination of 1 (file).
+009C   0BAA           00320                 DECFSZ PWM_Counter
+009D   2???           00321                         goto Return_From_Interrupt                                                      
+                            ;hadnenough singals
+009E   2???           00322                 goto Turn_On
+                      00323 
+009F                  00324 Off_Pulse
+009F   182B           00325                 BTFSC PWM_Last,0
+00A0   2???           00326                         goto Reset_PWM_Counter_Off                                      ;last was not on
+MPASM 5.57                    EPM_V2_1_2.ASM   2-10-2015  12:51:22         PAGE  8
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00327                 
+                      00328                 
+Message[305]: Using default destination of 1 (file).
+00A1   0BAA           00329                 DECFSZ PWM_Counter
+00A2   2???           00330                         goto Return_From_Interrupt                                                      
+                                    ;had enough singals
+00A3   2???           00331                 goto Turn_Off
+                      00332                 
+                      00333 
+                      00334 
+00A4                  00335 Reset_PWM_Counter_On
+00A4   3002           00336                 movlw   .002            
+00A5   00AA           00337                 movwf   PWM_Counter
+00A6   3001           00338                 movlw   .001                            ;pwm last was on
+00A7   00AB           00339                 movwf   PWM_Last
+00A8   2???           00340                 goto Return_From_Interrupt
+                      00341 
+                      00342 
+00A9                  00343 Reset_PWM_Counter_Off
+00A9   3002           00344                 movlw   .002            
+00AA   00AA           00345                 movwf   PWM_Counter
+00AB   3000           00346                 movlw   .000                            ;pwm last was off
+00AC   00AB           00347                 movwf   PWM_Last
+00AD   2???           00348                 goto Return_From_Interrupt
+                      00349         
+                      00350 
+                      00351 
+                      00352 
+00AE   0BA8           00353 test    DECFSZ PWM_Lengh,1
+00AF   2???           00354                         goto debug      
+00B0   2???           00355                 goto Return_From_Interrupt
+00B1   1405           00356 debug:  BSF             GPIO,0
+00B2   0000           00357                 nop
+00B3   0000           00358                 nop
+00B4   1005           00359                 BCF             GPIO,0
+00B5   2???           00360                 goto test
+                      00361 
+                      00362 
+                      00363 
+00B6                  00364 Invalid_PWM
+00B6   3002           00365                 movlw   .002            
+00B7   00AA           00366                 movwf   PWM_Counter
+00B8   2???           00367                 goto Return_From_Interrupt
+                      00368 
+00B9                  00369 Turn_On
+00B9   3002           00370         movlw   .002            
+00BA   00AA           00371         movwf   PWM_Counter
+                      00372         ;disable capacitor charger, GPIO1
+00BB   1283           00373         Banksel GPIO
+00BC   1085           00374         bcf             GPIO,1
+                      00375 ;       movlw   .050                            ; needs testing if it can be reduced to 20ms
+00BD   2???           00376         call    DelayMs                         ; Call DelayMs Subroutine
+                      00377 
+MPASM 5.57                    EPM_V2_1_2.ASM   2-10-2015  12:51:22         PAGE  9
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00378         ;set Status to On 010
+00BE   1283           00379         Banksel Status1
+00BF   1027           00380         BCF Status1,0
+00C0   14A7           00381         BSF Status1,1
+00C1   1127           00382         BCF Status1,2
+                      00383 
+                      00384         ;Pull data high
+00C2   1283           00385         Banksel GPIO
+00C3   1405           00386         BSF     GPIO,0
+                      00387 
+                      00388 
+                      00389         ;set GPIO4 high for 1mS
+00C4   1283           00390         Banksel GPIO
+00C5   1685           00391         bsf             GPIO,5
+00C6   3005           00392         movlw   .005                            ; 1 ms delay
+00C7   2???           00393         call    DelayMs                         ; Call DelayMs Subroutine
+00C8   1283           00394         Banksel GPIO
+00C9   1285           00395         bcf             GPIO,5
+                      00396 
+                      00397 
+                      00398         ;wait till switch cycle is complete
+                      00399 ;       movlw   .050                            ; needs testing if it can be reduced to 20ms
+00CA   2???           00400         call    DelayMs                         ; Call DelayMs Subroutine
+                      00401 
+                      00402         
+                      00403         ;turn capacitor charger back on
+00CB   1283           00404         Banksel GPIO
+00CC   1485           00405         bsf             GPIO,1
+                      00406 
+00CD   0064           00407         CLRWDT                                                  ;just in case
+                      00408                                                                         ;blink the LED 6 times, waiting 
+                            ~600ms enough to charge the capacitor (charging takes longer at <5V inpu)
+00CE   2???           00409         call Blink_LED
+00CF   3064           00410         movlw   .100                                    ;Wait 100 ms delay, 
+00D0   2???           00411         call    DelayMs 
+00D1   2???           00412         call Blink_LED
+00D2   3064           00413         movlw   .100                                    ;Wait 100 ms delay, 
+00D3   2???           00414         call    DelayMs 
+00D4   2???           00415         call Blink_LED
+00D5   3064           00416         movlw   .100                                    ;Wait 100 ms delay,
+00D6   0064           00417         CLRWDT                                                  ;clear the WDT just in case
+00D7   2???           00418         call    DelayMs 
+00D8   2???           00419         call Blink_LED
+00D9   3064           00420         movlw   .100                                    ;Wait 100 ms delay, 
+00DA   2???           00421         call    DelayMs 
+00DB   2???           00422         call Blink_LED
+00DC   3064           00423         movlw   .100                                    ;Wait 100 ms delay, 
+00DD   2???           00424         call    DelayMs 
+00DE   2???           00425         call Blink_LED
+00DF   30C8           00426         movlw   .200                                    ;Wait 100 ms delay, 
+00E0   2???           00427         call    DelayMs 
+00E1   30C8           00428         movlw   .200                                    ;Wait 100 ms delay, 
+00E2   0064           00429         CLRWDT                                                  ;clear the WDT just in case
+MPASM 5.57                    EPM_V2_1_2.ASM   2-10-2015  12:51:22         PAGE 10
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00430 ;2
+                      00431 
+00E3   3002           00432         movlw   .002            
+00E4   00AA           00433         movwf   PWM_Counter
+                      00434         ;disable capacitor charger, GPIO1
+00E5   1283           00435         Banksel GPIO
+00E6   1085           00436         bcf             GPIO,1
+                      00437 ;       movlw   .050                            ; needs testing if it can be reduced to 20ms
+00E7   2???           00438         call    DelayMs                         ; Call DelayMs Subroutine
+                      00439 
+                      00440         ;set Status to On 010
+00E8   1283           00441         Banksel Status1
+00E9   1027           00442         BCF Status1,0
+00EA   14A7           00443         BSF Status1,1
+00EB   1127           00444         BCF Status1,2
+                      00445 
+                      00446         ;Pull data high
+00EC   1283           00447         Banksel GPIO
+00ED   1405           00448         BSF     GPIO,0
+                      00449 
+                      00450 
+                      00451         ;set GPIO4 high for 1mS
+00EE   1283           00452         Banksel GPIO
+00EF   1685           00453         bsf             GPIO,5
+00F0   3005           00454         movlw   .005                            ; 1 ms delay
+00F1   2???           00455         call    DelayMs                         ; Call DelayMs Subroutine
+00F2   1283           00456         Banksel GPIO
+00F3   1285           00457         bcf             GPIO,5
+                      00458 
+                      00459 
+                      00460         ;wait till switch cycle is complete
+                      00461 ;       movlw   .050                            ; needs testing if it can be reduced to 20ms
+00F4   2???           00462         call    DelayMs                         ; Call DelayMs Subroutine
+                      00463 
+                      00464         
+                      00465         ;turn capacitor charger back on
+00F5   1283           00466         Banksel GPIO
+00F6   1485           00467         bsf             GPIO,1
+00F7   0064           00468         CLRWDT                                                  ;just in case
+                      00469                                                                         ;blink the LED 6 times, waiting 
+                            ~600ms enough to charge the capacitor (charging takes longer at <5V inpu)
+00F8   2???           00470         call Blink_LED
+00F9   3064           00471         movlw   .100                                    ;Wait 100 ms delay, 
+00FA   2???           00472         call    DelayMs 
+00FB   2???           00473         call Blink_LED
+00FC   3064           00474         movlw   .100                                    ;Wait 100 ms delay, 
+00FD   2???           00475         call    DelayMs 
+00FE   2???           00476         call Blink_LED
+00FF   3064           00477         movlw   .100                                    ;Wait 100 ms delay,
+0100   0064           00478         CLRWDT                                                  ;clear the WDT just in case
+0101   2???           00479         call    DelayMs 
+0102   2???           00480         call Blink_LED
+0103   3064           00481         movlw   .100                                    ;Wait 100 ms delay, 
+MPASM 5.57                    EPM_V2_1_2.ASM   2-10-2015  12:51:22         PAGE 11
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0104   2???           00482         call    DelayMs 
+0105   2???           00483         call Blink_LED
+0106   3064           00484         movlw   .100                                    ;Wait 100 ms delay, 
+0107   2???           00485         call    DelayMs 
+0108   2???           00486         call Blink_LED
+                      00487 
+0109   2???           00488         call    DelayMs 
+010A   1283           00489         Banksel TMR0
+010B   0181           00490         Clrf    TMR0                                    ;reset the time0\
+                      00491 
+                      00492 ;3
+                      00493 
+010C   2???           00494                 goto Return_From_Interrupt
+                      00495                 
+010D                  00496 Turn_Off
+010D   3002           00497         movlw   .002            
+010E   00AA           00498         movwf   PWM_Counter
+                      00499         ;disable capacitor charger, GPIO1
+010F   1283           00500         Banksel GPIO
+0110   1085           00501         bcf             GPIO,1
+0111   3014           00502         movlw   .020                            ;; needs testing if it can be reduced to 20ms
+0112   2???           00503         call    DelayMs                         ; Call DelayMs Subroutine
+                      00504 
+                      00505 
+                      00506         ;set Status to Off 001
+0113   1283           00507         Banksel Status1
+0114   1427           00508         BSF Status1,0
+0115   10A7           00509         BCF Status1,1
+0116   1127           00510         BCF Status1,2
+                      00511 
+                      00512 
+                      00513 
+                      00514         ;Pull data Low
+0117   1283           00515         Banksel GPIO
+0118   1005           00516         BCF     GPIO,0  ;       debug
+                      00517 
+                      00518         ;set GPIO4 high for 1ms
+0119   1283           00519         Banksel GPIO
+011A   1605           00520         bsf             GPIO,4
+011B   3005           00521         movlw   .005                            ; 1 ms delay
+011C   2???           00522         call    DelayMs                         ; Call DelayMs Subroutine
+011D   1283           00523         Banksel GPIO
+011E   1205           00524         bcf             GPIO,4
+                      00525 
+                      00526 
+                      00527         ;wait till switch cycle is complete
+011F   3064           00528         movlw   .100                            ; needs testing if it can be reduced to 20ms
+0120   2???           00529         call    DelayMs                         ; Call DelayMs Subroutine
+                      00530 
+0121   0064           00531         CLRWDT                                          ;just in case
+                      00532         ;turn capacitor charger back on
+0122   1283           00533         Banksel GPIO
+0123   1485           00534         bsf             GPIO,1
+MPASM 5.57                    EPM_V2_1_2.ASM   2-10-2015  12:51:22         PAGE 12
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00535         
+0124   2???           00536         call Blink_LED
+0125   3064           00537         movlw   .100                                    ;Wait 100 ms delay, 
+0126   2???           00538         call    DelayMs 
+0127   2???           00539         call Blink_LED
+0128   3064           00540         movlw   .100                                    ;Wait 100 ms delay, 
+0129   2???           00541         call    DelayMs 
+012A   2???           00542         call Blink_LED
+012B   3064           00543         movlw   .100                                    ;Wait 100 ms delay, 
+012C   0064           00544         CLRWDT                                  ;clear the WDT just in case
+                      00545 
+012D   2???           00546         call    DelayMs 
+012E   2???           00547         call Blink_LED
+012F   3064           00548         movlw   .100                                    ;Wait 100 ms delay,
+0130   2???           00549         call    DelayMs 
+0131   2???           00550         call Blink_LED
+0132   3064           00551         movlw   .100                                    ;Wait 100 ms delay, 
+0133   2???           00552         call    DelayMs 
+0134   2???           00553         call Blink_LED
+                      00554         
+0135   1283           00555         Banksel TMR0
+0136   0181           00556         Clrf    TMR0                                    ;reset the time0
+                      00557 
+0137   2???           00558         goto Return_From_Interrupt
+                      00559 
+Warning[207]: Found label after column 1. (Return_From_Interrupt)
+0138                  00560         Return_From_Interrupt
+0138   0064           00561         CLRWDT
+0139   1283           00562         Banksel INTCON  
+013A   108B           00563         BCF INTCON,INTF                                 ;clear gp2 interrupt    
+013B   110B           00564         BCF INTCON,T0IF                                 ;reset time interrupt bit
+013C   100B           00565         BCF INTCON,GPIF                                 ;cleare gpio interrupt flag
+013D   178B           00566         BSF INTCON,GIE                                  ;enable all interups
+013E   110B           00567         BCF     INTCON,T0IF                             ;clear timer interrupt
+013F   160B           00568         BSF     INTCON,INTE     
+                      00569 
+                      00570 
+0140   0009           00571         retfie                                                  ;return from interrupt  
+                      00572 
+                      00573 
+                      00574         
+0141                  00575 PWM_warning
+0141   301E           00576         movlw   .030
+0142   00A9           00577         movwf   PWM_timout_counter_rollover
+0143   2???           00578         call Blink_LED
+0144   0008           00579         return
+                      00580         
+                      00581         
+                      00582         
+                      00583         
+                      00584         
+                      00585                 
+                      00586         
+MPASM 5.57                    EPM_V2_1_2.ASM   2-10-2015  12:51:22         PAGE 13
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00587         
+0145                  00588 Blink_LED:
+                      00589                                                 ;Set GPIO 2 output
+Warning[205]: Found directive in column 1. (Banksel)
+0145   1683           00590 Banksel TRISIO
+Warning[203]: Found opcode in column 1. (BCF)
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0146   1105           00591 BCF             TRISIO,2                ; GPIO,2 output
+                      00592 ;lblink the led
+Warning[205]: Found directive in column 1. (Banksel)
+0147   1283           00593 Banksel GPIO
+Warning[203]: Found opcode in column 1. (bsf)
+0148   1505           00594 bsf             GPIO,2                  ; Set GP2 Output To High
+Warning[203]: Found opcode in column 1. (movlw)
+0149   300A           00595 movlw   .010                                    ;Wait 10 ms delay, just in case there the PWM is noisy
+Warning[203]: Found opcode in column 1. (call)
+014A   2???           00596 call    DelayMs 
+                      00597 
+Warning[205]: Found directive in column 1. (Banksel)
+014B   1283           00598 Banksel GPIO
+Warning[203]: Found opcode in column 1. (bcf)
+014C   1105           00599 bcf             GPIO,2                  ; Set GP2 Output To High
+Warning[205]: Found directive in column 1. (Banksel)
+014D   1683           00600 Banksel TRISIO
+Warning[203]: Found opcode in column 1. (BSF)
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+014E   1505           00601 BSF             TRISIO,2                ; GPIO,2 input
+Warning[203]: Found opcode in column 1. (movlw)
+014F   300A           00602 movlw   .010                                    ;Wait 10 ms delay, just in case there the PWM is noisy
+Warning[203]: Found opcode in column 1. (call)
+0150   2???           00603 call    DelayMs
+Warning[203]: Found opcode in column 1. (return)
+0151   0008           00604 return                                  ; return to the caller
+                      00605         
+                      00606 
+                      00607 
+                      00608 
+                      00609         
+                      00610         
+                      00611         ;----------------- DelayMs: Milisecond Delay Subroutine ----------------------
+                      00612 ; Paramater: WREG = delay amount in milisecond, max: 255 milisecond
+0152                  00613 DelayMs:
+0152   00A1           00614      movwf  Delay + 1
+0153                  00615 DelayLoop:
+0153   2???           00616      call   Delay1ms    
+0154   0BA1           00617      decfsz Delay + 1,f   ; Decrease Delay + 1, If zero skip the next instruction
+0155   2???           00618      goto   DelayLoop     ; Not zero goto DelayLoop
+0156   0008           00619      return               ; return to the caller
+                      00620 
+                      00621 ;----------------- Delay1ms: 1 ms Delay Subroutine ---------------------------
+0157                  00622 Delay1ms:                 ; Total Delay: 1998 x 0.5us ~ 1 ms
+0157   3099           00623      movlw  0x99
+0158   00A0           00624      movwf  Delay
+MPASM 5.57                    EPM_V2_1_2.ASM   2-10-2015  12:51:22         PAGE 14
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0159                  00625 DelayLoop1:
+0159   0BA0           00626      decfsz Delay,f       ; Decrease Delay, If zero skip the next instruction
+015A   2???           00627      goto   DelayLoop1
+015B                  00628 DelayLoop2:
+015B   0BA0           00629      decfsz Delay,f       ; Decrease Delay1, If zero skip the next instruction
+015C   2???           00630      goto   DelayLoop2    ; Not zero goto DelayLoop2
+015D                  00631 DelayLoop3:
+015D   0BA0           00632      decfsz Delay,f       ; Decrease Delay1, If zero skip the next instruction
+015E   2???           00633      goto   DelayLoop3    ; Not zero goto DelayLoop2
+015F   0008           00634      return               ; Return to the caller
+                      00635 
+33DC                  00636      end
+MPASM 5.57                    EPM_V2_1_2.ASM   2-10-2015  12:51:22         PAGE 15
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+ADCON0                            0000001F
+ADCS0                             00000004
+ADCS1                             00000005
+ADCS2                             00000006
+ADFM                              00000007
+ADIE                              00000006
+ADIF                              00000006
+ADON                              00000000
+ADRESH                            0000001E
+ADRESL                            0000009E
+ANS0                              00000000
+ANS1                              00000001
+ANS2                              00000002
+ANS3                              00000003
+ANSEL                             0000009F
+Blink_LED                         00000145
+Button                            0000006E
+C                                 00000000
+CCP1CON                           00000015
+CCP1IE                            00000005
+CCP1IF                            00000005
+CCP1M0                            00000000
+CCP1M1                            00000001
+CCP1M2                            00000002
+CCP1M3                            00000003
+CCPR1                             00000013
+CCPR1H                            00000014
+CCPR1L                            00000013
+CHS0                              00000002
+CHS1                              00000003
+CHS2                              00000004
+CINV                              00000004
+CIS                               00000003
+CM0                               00000000
+CM1                               00000001
+CM2                               00000002
+CMCON0                            00000019
+CMCON1                            0000001A
+CMIE                              00000003
+CMIF                              00000003
+CMSYNC                            00000000
+COUT                              00000006
+Center_Pulse_Lengh                00000024
+DC                                00000001
+DC1B0                             00000004
+DC1B1                             00000005
+Delay                             00000020
+Delay1ms                          00000157
+DelayLoop                         00000153
+DelayLoop1                        00000159
+DelayLoop2                        0000015B
+DelayLoop3                        0000015D
+DelayMs                           00000152
+MPASM 5.57                    EPM_V2_1_2.ASM   2-10-2015  12:51:22         PAGE 16
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+EEADR                             0000009B
+EECON1                            0000009C
+EECON2                            0000009D
+EEDAT                             0000009A
+EEDATA                            0000009A
+EEIE                              00000007
+EEIF                              00000007
+F                                 00000001
+FSR                               00000004
+Falling_Edge                      0000007F
+GIE                               00000007
+GO                                00000001
+GO_DONE                           00000001
+GO_NOT_DONE                       00000001
+GP0                               00000000
+GP1                               00000001
+GP2                               00000002
+GP3                               00000003
+GP4                               00000004
+GP5                               00000005
+GPIE                              00000003
+GPIF                              00000000
+GPIO                              00000005
+GPIO_Current                      00000026
+GPIO_Last                         00000025
+HTS                               00000002
+INDF                              00000000
+INTCON                            0000000B
+INTE                              00000004
+INTEDG                            00000006
+INTF                              00000001
+IOC                               00000096
+IOC0                              00000000
+IOC1                              00000001
+IOC2                              00000002
+IOC3                              00000003
+IOC4                              00000004
+IOC5                              00000005
+IOCA                              00000096
+IOCA0                             00000000
+IOCA1                             00000001
+IOCA2                             00000002
+IOCA3                             00000003
+IOCA4                             00000004
+IOCA5                             00000005
+IRCF0                             00000004
+IRCF1                             00000005
+IRCF2                             00000006
+IRP                               00000007
+Interrupt_Call                    00000057
+Invalid_PWM                       000000B6
+LTS                               00000001
+Main_Loop                         00000055
+MPASM 5.57                    EPM_V2_1_2.ASM   2-10-2015  12:51:22         PAGE 17
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+NOT_BOD                           00000000
+NOT_DONE                          00000001
+NOT_GPPU                          00000007
+NOT_PD                            00000003
+NOT_POR                           00000001
+NOT_T1SYNC                        00000002
+NOT_TO                            00000004
+OPTION_REG                        00000081
+OSCCON                            0000008F
+OSCTUNE                           00000090
+OSFIE                             00000002
+OSFIF                             00000002
+OSTS                              00000003
+Off_Pulse                         0000009F
+Off_Pulse_Lengh                   00000022
+On_Pulse                          0000009A
+On_Pulse_Lengh                    00000023
+PCL                               00000002
+PCLATH                            0000000A
+PCON                              0000008E
+PEIE                              00000006
+PIE1                              0000008C
+PIR1                              0000000C
+PR2                               00000092
+PS0                               00000000
+PS1                               00000001
+PS2                               00000002
+PSA                               00000003
+PWM                               00000077
+PWM_Counter                       0000002A
+PWM_Last                          0000002B
+PWM_Lengh                         00000028
+PWM_current                       0000002C
+PWM_timout_counter_rollover       00000029
+PWM_warning                       00000141
+RD                                00000000
+RP0                               00000005
+RP1                               00000006
+Reset_PWM_Counter_Off             000000A9
+Reset_PWM_Counter_On              000000A4
+Return_From_Interrupt             00000138
+Rising_Edge                       0000007C
+SBODEN                            00000004
+SCS                               00000000
+STATUS                            00000003
+SWDTEN                            00000000
+Setup                             00000005
+Start                             00000000
+Status1                           00000027
+T0CS                              00000005
+T0IE                              00000005
+T0IF                              00000002
+T0SE                              00000004
+MPASM 5.57                    EPM_V2_1_2.ASM   2-10-2015  12:51:22         PAGE 18
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+T1CKPS0                           00000004
+T1CKPS1                           00000005
+T1CON                             00000010
+T1GE                              00000006
+T1GINV                            00000007
+T1GSS                             00000001
+T1IE                              00000000
+T1IF                              00000000
+T1OSCEN                           00000003
+T2CKPS0                           00000000
+T2CKPS1                           00000001
+T2CON                             00000012
+T2IE                              00000001
+T2IF                              00000001
+TMR0                              00000001
+TMR0IE                            00000005
+TMR0IF                            00000002
+TMR1                              0000000E
+TMR1CS                            00000001
+TMR1GE                            00000006
+TMR1H                             0000000F
+TMR1IE                            00000000
+TMR1IF                            00000000
+TMR1L                             0000000E
+TMR1ON                            00000000
+TMR2                              00000011
+TMR2IE                            00000001
+TMR2IF                            00000001
+TMR2ON                            00000002
+TOUTPS0                           00000003
+TOUTPS1                           00000004
+TOUTPS2                           00000005
+TOUTPS3                           00000006
+TRISIO                            00000085
+TRISIO0                           00000000
+TRISIO1                           00000001
+TRISIO2                           00000002
+TRISIO3                           00000003
+TRISIO4                           00000004
+TRISIO5                           00000005
+TUN0                              00000000
+TUN1                              00000001
+TUN2                              00000002
+TUN3                              00000003
+TUN4                              00000004
+Timer                             00000068
+Turn_Off                          0000010D
+Turn_On                           000000B9
+ULPWUE                            00000005
+VCFG                              00000006
+VR0                               00000000
+VR1                               00000001
+VR2                               00000002
+MPASM 5.57                    EPM_V2_1_2.ASM   2-10-2015  12:51:22         PAGE 19
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+VR3                               00000003
+VRCON                             00000099
+VREN                              00000007
+VRR                               00000005
+W                                 00000000
+WDTCON                            00000018
+WDTPS0                            00000001
+WDTPS1                            00000002
+WDTPS2                            00000003
+WDTPS3                            00000004
+WPU                               00000095
+WPU0                              00000000
+WPU1                              00000001
+WPU2                              00000002
+WPU4                              00000004
+WPU5                              00000005
+WPUA                              00000095
+WPUA0                             00000000
+WPUA1                             00000001
+WPUA2                             00000002
+WPUA4                             00000004
+WPUA5                             00000005
+WR                                00000001
+WREN                              00000002
+WRERR                             00000003
+Z                                 00000002
+_BOD_NSLEEP                       00003EFF
+_BOD_OFF                          00003CFF
+_BOD_ON                           00003FFF
+_BOD_SBODEN                       00003DFF
+_BOREN_NSLEEP                     00003EFF
+_BOREN_OFF                        00003CFF
+_BOREN_ON                         00003FFF
+_BOREN_SBODEN                     00003DFF
+_CONFIG                           00002007
+_CPD_OFF                          00003FFF
+_CPD_ON                           00003F7F
+_CP_OFF                           00003FFF
+_CP_ON                            00003FBF
+_DEVID1                           00002006
+_EC_OSC                           00003FFB
+_EXTRC                            00003FFF
+_EXTRCIO                          00003FFE
+_EXTRC_OSC_CLKOUT                 00003FFF
+_EXTRC_OSC_NOCLKOUT               00003FFE
+_FCMEN_OFF                        000037FF
+_FCMEN_ON                         00003FFF
+_FOSC_EC                          00003FFB
+_FOSC_EXTRCCLK                    00003FFF
+_FOSC_EXTRCIO                     00003FFE
+_FOSC_HS                          00003FFA
+_FOSC_INTOSCCLK                   00003FFD
+_FOSC_INTOSCIO                    00003FFC
+MPASM 5.57                    EPM_V2_1_2.ASM   2-10-2015  12:51:22         PAGE 20
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+_FOSC_LP                          00003FF8
+_FOSC_XT                          00003FF9
+_HS_OSC                           00003FFA
+_IDLOC0                           00002000
+_IDLOC1                           00002001
+_IDLOC2                           00002002
+_IDLOC3                           00002003
+_IESO_OFF                         00003BFF
+_IESO_ON                          00003FFF
+_INTOSC                           00003FFD
+_INTOSCIO                         00003FFC
+_INTRC_OSC_CLKOUT                 00003FFD
+_INTRC_OSC_NOCLKOUT               00003FFC
+_LP_OSC                           00003FF8
+_MCLRE_OFF                        00003FDF
+_MCLRE_ON                         00003FFF
+_PWRTE_OFF                        00003FFF
+_PWRTE_ON                         00003FEF
+_WDTE_OFF                         00003FF7
+_WDTE_ON                          00003FFF
+_WDT_OFF                          00003FF7
+_WDT_ON                           00003FFF
+_XT_OSC                           00003FF9
+__12F683                          00000001
+blah                              0000006B
+debug                             000000B1
+normo                             00000083
+test                              000000AE
+
+Errors   :     0
+Warnings :    17 reported,     0 suppressed
+Messages :    27 reported,     0 suppressed
+
+

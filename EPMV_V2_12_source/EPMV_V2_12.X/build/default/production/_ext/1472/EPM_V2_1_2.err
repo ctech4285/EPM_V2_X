@@ -1,0 +1,44 @@
+Warning[205] ..\EPM_V2_1_2.ASM 1 : Found directive in column 1. (include)
+Message[302] ..\EPM_V2_1_2.ASM 64 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] ..\EPM_V2_1_2.ASM 70 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] ..\EPM_V2_1_2.ASM 83 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] ..\EPM_V2_1_2.ASM 84 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] ..\EPM_V2_1_2.ASM 85 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] ..\EPM_V2_1_2.ASM 86 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] ..\EPM_V2_1_2.ASM 87 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] ..\EPM_V2_1_2.ASM 88 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] ..\EPM_V2_1_2.ASM 89 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] ..\EPM_V2_1_2.ASM 90 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] ..\EPM_V2_1_2.ASM 93 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] ..\EPM_V2_1_2.ASM 97 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] ..\EPM_V2_1_2.ASM 98 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] ..\EPM_V2_1_2.ASM 99 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] ..\EPM_V2_1_2.ASM 100 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] ..\EPM_V2_1_2.ASM 101 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] ..\EPM_V2_1_2.ASM 102 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] ..\EPM_V2_1_2.ASM 115 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] ..\EPM_V2_1_2.ASM 116 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] ..\EPM_V2_1_2.ASM 117 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] ..\EPM_V2_1_2.ASM 118 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] ..\EPM_V2_1_2.ASM 119 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] ..\EPM_V2_1_2.ASM 120 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Warning[203] ..\EPM_V2_1_2.ASM 191 : Found opcode in column 1. (CLRWDT)
+Warning[203] ..\EPM_V2_1_2.ASM 193 : Found opcode in column 1. (goto)
+Message[305] ..\EPM_V2_1_2.ASM 320 : Using default destination of 1 (file).
+Message[305] ..\EPM_V2_1_2.ASM 329 : Using default destination of 1 (file).
+Warning[207] ..\EPM_V2_1_2.ASM 560 : Found label after column 1. (Return_From_Interrupt)
+Warning[205] ..\EPM_V2_1_2.ASM 590 : Found directive in column 1. (Banksel)
+Warning[203] ..\EPM_V2_1_2.ASM 591 : Found opcode in column 1. (BCF)
+Message[302] ..\EPM_V2_1_2.ASM 591 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Warning[205] ..\EPM_V2_1_2.ASM 593 : Found directive in column 1. (Banksel)
+Warning[203] ..\EPM_V2_1_2.ASM 594 : Found opcode in column 1. (bsf)
+Warning[203] ..\EPM_V2_1_2.ASM 595 : Found opcode in column 1. (movlw)
+Warning[203] ..\EPM_V2_1_2.ASM 596 : Found opcode in column 1. (call)
+Warning[205] ..\EPM_V2_1_2.ASM 598 : Found directive in column 1. (Banksel)
+Warning[203] ..\EPM_V2_1_2.ASM 599 : Found opcode in column 1. (bcf)
+Warning[205] ..\EPM_V2_1_2.ASM 600 : Found directive in column 1. (Banksel)
+Warning[203] ..\EPM_V2_1_2.ASM 601 : Found opcode in column 1. (BSF)
+Message[302] ..\EPM_V2_1_2.ASM 601 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Warning[203] ..\EPM_V2_1_2.ASM 602 : Found opcode in column 1. (movlw)
+Warning[203] ..\EPM_V2_1_2.ASM 603 : Found opcode in column 1. (call)
+Warning[203] ..\EPM_V2_1_2.ASM 604 : Found opcode in column 1. (return)
